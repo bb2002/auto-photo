@@ -1,6 +1,6 @@
-const DEPT_PATH = ''; // 정리해야할 사진들이 있는 폴더 경로
-const ARIV_PATH = ''; // 정리 된 사진들이 저장될 폴더 경로
-const UNKNOWN = ''; // 정리에 실패한 파일들은 어디로?
+const DEPT_PATH = '/mnt/WD_RAID5_4000/emby/content/Photos/Devices/S20+'; // 정리해야할 사진들이 있는 폴더 경로
+const ARIV_PATH = '/mnt/WD_RAID5_4000/emby/content/TESTTEST'; // 정리 된 사진들이 저장될 폴더 경로
+const UNKNOWN = 'Unknown'; // 정리에 실패한 파일들은 어디로?
 
 const fs = require('fs');
 const {parse} = require("date-fns");
