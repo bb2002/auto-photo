@@ -137,6 +137,9 @@ async function bootstrap() {
       path.join(ARIV_PATH, UNKNOWN, deptFile));
     result.failure++;
   }
+
+  console.log('정리 완료!')
+  console.log(result)
 }
 
 bootstrap()
