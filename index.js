@@ -110,10 +110,9 @@ async function bootstrap() {
   }
 
   for (const deptFile of deptFiles) {
-    const fileName = deptFile.split('.')[0];
     const dateParseResult = [
-      parseDateFromFileName(fileName),
-      await parseDateFromExif(fileName),
+      parseDateFromFileName(deptFile),
+      await parseDateFromExif(deptFile),
     ]
 
     if (dateParseResult[0].isCorrect) {
@@ -142,4 +141,4 @@ async function bootstrap() {
   console.log(result)
 }
 
-bootstrap()
+bootstrap().catch(console.error);
