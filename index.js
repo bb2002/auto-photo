@@ -1,10 +1,10 @@
-const DEPT_PATH = '/mnt/WD_RAID5_4000/emby/content/Photos/Devices/S20+'; // 정리해야할 사진들이 있는 폴더 경로
-const ARIV_PATH = '/mnt/WD_RAID5_4000/emby/content/TESTTEST'; // 정리 된 사진들이 저장될 폴더 경로
-const UNKNOWN = 'Unknown'; // 정리에 실패한 파일들은 어디로?
+const DEPT_PATH = "./dept"; // 정리해야할 사진들이 있는 폴더 경로
+const ARIV_PATH = "./ariv"; // 정리 된 사진들이 저장될 폴더 경로
+const UNKNOWN = "Unknown"; // 정리에 실패한 파일들은 어디로?
 
-const fs = require('fs');
-const {parse} = require("date-fns");
-const ExifReader = require('exifreader');
+const fs = require("fs");
+const { parse, format } = require("date-fns");
+const ExifReader = require("exifreader");
 const path = require("path");
 
 function getFilesFromDept() {
@@ -12,7 +12,7 @@ function getFilesFromDept() {
 }
 
 function isDateCorrect(date) {
-  if (!(date instanceof Date) || !isNaN(date)) {
+  if (!(date instanceof Date) || isNaN(date)) {
     return false;
   }
 
@@ -21,11 +21,11 @@ function isDateCorrect(date) {
     return false;
   }
 
-  return true
+  return true;
 }
 
 function parseDateFromFileName(fileName) {
-  const numberOnlyFileName = fileName.replace(/\d+/g, '');
+  const numberOnlyFileName = fileName.match(/\d+/g).join("");
   let date = null;
 
   if (numberOnlyFileName.length === 13 || numberOnlyFileName.length === 10) {
@@ -33,23 +33,27 @@ function parseDateFromFileName(fileName) {
     date = new Date(parseInt(numberOnlyFileName, 10));
   }
 
-  if (numberOnlyFileName.length === 14 && numberOnlyFileName.startsWith('20')) {
+  if (numberOnlyFileName.length === 14 && numberOnlyFileName.startsWith("20")) {
     // YYYYMMDDHHMMSS 형태의 경우
-    date = parse(numberOnlyFileName, 'yyyyMMddHHmmss', null);
+    const tmp = parse(numberOnlyFileName, "yyyyMMddHHmmss", new Date());
+    date = format(tmp, "yyyy-MM-dd HH:mm:ss");
   }
 
   if (numberOnlyFileName.length === 12) {
     // YYMMDDHHMMSS 형태의 경우
-    date = parse(numberOnlyFileName, 'yyMMddHHmmss', null);
+    const tmp = parse(numberOnlyFileName, "yyMMddHHmmss", new Date());
+    date = dateFns.format(tmp, "yyyy-MM-dd HH:mm:ss");
   }
 
   return {
     isCorrect: isDateCorrect(date),
     date,
-  }
+  };
 }
 
-async function parseDateFromExif(filePath) {
+async function parseDateFromExif(fileName) {
+  const filePath = path.join(DEPT_PATH, fileName);
+
   const tags = await ExifReader.load(filePath);
   let dateTimeString = null;
 
@@ -57,7 +61,7 @@ async function parseDateFromExif(filePath) {
     return {
       isCorrect: false,
       date: null,
-    }
+    };
   }
 
   if (tags.DateTime) {
@@ -85,7 +89,7 @@ async function parseDateFromExif(filePath) {
 
 function copyFile(fromFilePath, toFilePath) {
   try {
-    fs.accessSync(toFilePath)
+    fs.accessSync(toFilePath);
     return false;
   } catch (e) {}
 
@@ -107,18 +111,23 @@ async function bootstrap() {
     successByFileName: 0,
     successByExif: 0,
     failure: 0,
-  }
+  };
 
   for (const deptFile of deptFiles) {
     const dateParseResult = [
       parseDateFromFileName(deptFile),
       await parseDateFromExif(deptFile),
-    ]
+    ];
 
     if (dateParseResult[0].isCorrect) {
       copyFile(
         path.join(DEPT_PATH, deptFile),
-        path.join(ARIV_PATH, generateFolderNameFromDate(dateParseResult[0].date), deptFile));
+        path.join(
+          ARIV_PATH,
+          generateFolderNameFromDate(dateParseResult[0].date),
+          deptFile
+        )
+      );
       result.successByFileName++;
       break;
     }
@@ -126,19 +135,25 @@ async function bootstrap() {
     if (dateParseResult[1].isCorrect) {
       copyFile(
         path.join(DEPT_PATH, deptFile),
-        path.join(ARIV_PATH, generateFolderNameFromDate(dateParseResult[1].date), deptFile));
+        path.join(
+          ARIV_PATH,
+          generateFolderNameFromDate(dateParseResult[1].date),
+          deptFile
+        )
+      );
       result.successByExif++;
       break;
     }
 
     copyFile(
       path.join(DEPT_PATH, deptFile),
-      path.join(ARIV_PATH, UNKNOWN, deptFile));
+      path.join(ARIV_PATH, UNKNOWN, deptFile)
+    );
     result.failure++;
   }
 
-  console.log('정리 완료!')
-  console.log(result)
+  console.log("정리 완료!");
+  console.log(result);
 }
 
 bootstrap().catch(console.error);
