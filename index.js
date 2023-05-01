@@ -33,16 +33,16 @@ function parseDateFromFileName(fileName) {
     date = new Date(parseInt(numberOnlyFileName, 10));
   }
 
-  if (numberOnlyFileName.length === 14 && numberOnlyFileName.startsWith("20")) {
+  if (numberOnlyFileName.length >= 14 && numberOnlyFileName.startsWith("20")) {
     // YYYYMMDDHHMMSS 형태의 경우
-    const tmp = parse(numberOnlyFileName, "yyyyMMddHHmmss", new Date());
-    date = format(tmp, "yyyy-MM-dd HH:mm:ss");
+    const tmp = parse(numberOnlyFileName.slice(0,14), "yyyyMMddHHmmss", new Date());
+    date = new Date(format(tmp, "yyyy-MM-dd HH:mm:ss"));
   }
 
   if (numberOnlyFileName.length === 12) {
     // YYMMDDHHMMSS 형태의 경우
     const tmp = parse(numberOnlyFileName, "yyMMddHHmmss", new Date());
-    date = dateFns.format(tmp, "yyyy-MM-dd HH:mm:ss");
+    date = new Date(dateFns.format(tmp, "yyyy-MM-dd HH:mm:ss"));
   }
 
   return {
@@ -53,38 +53,35 @@ function parseDateFromFileName(fileName) {
 
 async function parseDateFromExif(fileName) {
   const filePath = path.join(DEPT_PATH, fileName);
-
-  const tags = await ExifReader.load(filePath);
-  let dateTimeString = null;
-
-  if (!tags) {
-    return {
-      isCorrect: false,
-      date: null,
-    };
+  const INCORRECT = {
+    isCorrect: false,
+    date: null,
   }
 
-  if (tags.DateTime) {
-    if (tags.DateTime.value) {
-      dateTimeString = tags.DateTime.value;
+  try {
+    const tags = await ExifReader.load(filePath);
+    let dateTimeString = null;
+  
+    if (!tags) {
+      return INCORRECT;
+    }
+  
+    if (tags['DateTime'] && tags['DateTime'].description) {
+      dateTimeString = tags['DateTime'].description;
     }
 
-    if (tags.DateTime.description) {
-      dateTimeString = tags.DateTime.description;
+    if (tags['DateTimeOriginal'] && tags['DateTimeOriginal'].description) {
+      dateTimeString = tags['DateTimeOriginal'].description;
     }
+  
+    if (!dateTimeString) {
+      return INCORRECT;
+    }
+  
+    return parseDateFromFileName(dateTimeString);
+  } catch(ex) {
+    return INCORRECT;
   }
-
-  if (tags.DateTimeOriginal) {
-    if (tags.DateTimeOriginal.value) {
-      dateTimeString = tags.DateTimeOriginal.value;
-    }
-
-    if (tags.DateTimeOriginal.description) {
-      dateTimeString = tags.DateTimeOriginal.description;
-    }
-  }
-
-  return parseDateFromFileName(dateTimeString);
 }
 
 function copyFile(fromFilePath, toFilePath) {
@@ -129,7 +126,7 @@ async function bootstrap() {
         )
       );
       result.successByFileName++;
-      break;
+      continue;
     }
 
     if (dateParseResult[1].isCorrect) {
@@ -142,7 +139,7 @@ async function bootstrap() {
         )
       );
       result.successByExif++;
-      break;
+      continue;
     }
 
     copyFile(
