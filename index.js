@@ -53,9 +53,14 @@ function parseDateFromFileName(fileName) {
 
 async function parseDateFromExif(fileName) {
   const filePath = path.join(DEPT_PATH, fileName);
+  const ext = path.extname(filePath)?.toLocaleLowerCase();
   const INCORRECT = {
     isCorrect: false,
     date: null,
+  }
+
+  if(ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") {
+    return INCORRECT;
   }
 
   try {
