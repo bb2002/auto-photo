@@ -99,7 +99,7 @@ function copyFile(fromFilePath, toFilePath) {
 }
 
 function generateFolderNameFromDate(date) {
-  return `${date.getFullYear()}. ${date.getMonth() + 1}`;
+  return format(date, 'yyyy. MM')
 }
 
 async function bootstrap() {
