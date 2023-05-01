@@ -93,9 +93,11 @@ function copyFile(fromFilePath, toFilePath) {
   const toFileFolder = path.dirname(toFilePath);
   if (!fs.existsSync(toFileFolder)) {
     fs.mkdirSync(toFileFolder, { recursive: true });
+    fs.chmod(toFileFolder, '0777')
   }
 
   fs.copyFileSync(fromFilePath, toFilePath);
+  fs.chmod(toFilePath, '0777')
 }
 
 function generateFolderNameFromDate(date) {
