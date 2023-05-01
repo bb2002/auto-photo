@@ -70,6 +70,10 @@ async function parseDateFromExif(fileName) {
     if (!tags) {
       return INCORRECT;
     }
+
+    if (tags['CreateDate'] && tags['CreateDate'].description) {
+      dateTimeString = tags['CreateDate'].description
+    }
   
     if (tags['DateTime'] && tags['DateTime'].description) {
       dateTimeString = tags['DateTime'].description;
@@ -169,3 +173,4 @@ async function bootstrap() {
 }
 
 bootstrap().catch(console.error);
+
