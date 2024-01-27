@@ -127,6 +127,7 @@ async function bootstrap() {
   for (const DEPT_PATH of DEPT_PATHES) {
     const deptFiles = fs.readdirSync(DEPT_PATH);
     for (const deptFile of deptFiles) {
+      console.log(`processing... success(filename): ${result.successByFileName}, success(exif): ${result.successByExif}, failure: ${result.failure}`);
       try {
         const dateParseResult = [
           parseDateFromFileName(deptFile),
@@ -171,9 +172,7 @@ async function bootstrap() {
     }
   }
 
-
-
-  console.log("정리 완료!");
+  console.log("Completed!");
   console.log(result);
 }
 
