@@ -47,7 +47,7 @@ function parseDateFromFileName(fileName) {
   };
 }
 
-async function parseDateFromExif(fileName) {
+async function parseDateFromExif(fileName, DEPT_PATH) {
   const filePath = path.join(DEPT_PATH, fileName);
   const ext = path.extname(filePath)?.toLocaleLowerCase();
   const INCORRECT = {
@@ -130,7 +130,7 @@ async function bootstrap() {
       try {
         const dateParseResult = [
           parseDateFromFileName(deptFile),
-          await parseDateFromExif(deptFile),
+          await parseDateFromExif(deptFile, DEPT_PATH),
         ];
     
         if (dateParseResult[0].isCorrect) {
