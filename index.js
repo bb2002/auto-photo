@@ -8,7 +8,7 @@ const ExifReader = require("exifreader");
 const path = require("path");
 
 function getFilesFromDept() {
-  return DEPT_PATHES.map((path) => fs.readdirSync(path));
+  return DEPT_PATHES.map((path) => fs.readdirSync(path)).flat();
 }
 
 function isDateCorrect(date) {
@@ -123,6 +123,7 @@ function generateFolderNameFromDate(date) {
 
 async function bootstrap() {
   const deptFiles = getFilesFromDept();
+  console.log(deptFiles);
   const result = {
     successByFileName: 0,
     successByExif: 0,
@@ -130,42 +131,47 @@ async function bootstrap() {
   };
 
   for (const deptFile of deptFiles) {
-    const dateParseResult = [
-      parseDateFromFileName(deptFile),
-      await parseDateFromExif(deptFile),
-    ];
-
-    if (dateParseResult[0].isCorrect) {
+    try {
+      const dateParseResult = [
+        parseDateFromFileName(deptFile),
+        await parseDateFromExif(deptFile),
+      ];
+  
+      if (dateParseResult[0].isCorrect) {
+        copyFile(
+          path.join(DEPT_PATH, deptFile),
+          path.join(
+            ARIV_PATH,
+            generateFolderNameFromDate(dateParseResult[0].date),
+            deptFile
+          )
+        );
+        result.successByFileName++;
+        continue;
+      }
+  
+      if (dateParseResult[1].isCorrect) {
+        copyFile(
+          path.join(DEPT_PATH, deptFile),
+          path.join(
+            ARIV_PATH,
+            generateFolderNameFromDate(dateParseResult[1].date),
+            deptFile
+          )
+        );
+        result.successByExif++;
+        continue;
+      }
+  
       copyFile(
         path.join(DEPT_PATH, deptFile),
-        path.join(
-          ARIV_PATH,
-          generateFolderNameFromDate(dateParseResult[0].date),
-          deptFile
-        )
+        path.join(ARIV_PATH, UNKNOWN, deptFile)
       );
-      result.successByFileName++;
-      continue;
+      result.failure++;
+    } catch (ex) {
+      console.error(ex);
+      result.failure++;
     }
-
-    if (dateParseResult[1].isCorrect) {
-      copyFile(
-        path.join(DEPT_PATH, deptFile),
-        path.join(
-          ARIV_PATH,
-          generateFolderNameFromDate(dateParseResult[1].date),
-          deptFile
-        )
-      );
-      result.successByExif++;
-      continue;
-    }
-
-    copyFile(
-      path.join(DEPT_PATH, deptFile),
-      path.join(ARIV_PATH, UNKNOWN, deptFile)
-    );
-    result.failure++;
   }
 
   console.log("정리 완료!");
