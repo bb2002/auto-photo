@@ -1,4 +1,4 @@
-const DEPT_PATH = "./dept"; // 정리해야할 사진들이 있는 폴더 경로
+const DEPT_PATHES = ["./dept"]; // 정리해야할 사진들이 있는 폴더 경로
 const ARIV_PATH = "./ariv"; // 정리 된 사진들이 저장될 폴더 경로
 const UNKNOWN = "Unknown"; // 정리에 실패한 파일들은 어디로?
 
@@ -8,7 +8,7 @@ const ExifReader = require("exifreader");
 const path = require("path");
 
 function getFilesFromDept() {
-  return fs.readdirSync(DEPT_PATH);
+  return DEPT_PATHES.map((path) => fs.readdirSync(path));
 }
 
 function isDateCorrect(date) {
