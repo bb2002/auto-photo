@@ -1,5 +1,5 @@
-const DEPT_PATHES = ["./dept"]; // 정리해야할 사진들이 있는 폴더 경로
-const ARIV_PATH = "./ariv"; // 정리 된 사진들이 저장될 폴더 경로
+const DEPT_PATHES = ["/mnt/sda/Pictures/Camera", "/mnt/sda/Pictures/Shared"]; // 정리해야할 사진들이 있는 폴더 경로
+const ARIV_PATH = "/mnt/md5/seafsync/Seafile/타임라인"; // 정리 된 사진들이 저장될 폴더 경로
 const UNKNOWN = "Unknown"; // 정리에 실패한 파일들은 어디로?
 
 const fs = require("fs");
@@ -107,7 +107,7 @@ function copyFile(fromFilePath, toFilePath) {
   const toFileFolder = path.dirname(toFilePath);
   if (!fs.existsSync(toFileFolder)) {
     fs.mkdirSync(toFileFolder, { recursive: true });
-    fs.chmod(toFileFolder, "0777", (err) => {
+    fs.chmod(toFileFolder, "0755", (err) => {
       if (err) {
         console.error(err);
       }
@@ -115,7 +115,7 @@ function copyFile(fromFilePath, toFilePath) {
   }
 
   fs.copyFileSync(fromFilePath, toFilePath);
-  fs.chmod(toFilePath, "0777", (err) => {
+  fs.chmod(toFilePath, "0755", (err) => {
     if (err) {
       console.error(err);
     }
