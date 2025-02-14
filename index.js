@@ -22,38 +22,48 @@ function isDateCorrect(date) {
 
 function parseDateFromFileName(fileName) {
   let numberOnlyFileName, date;
-  if (fileName.includes("-")) {
-    // 카카오에서 다운로드 한 사진의 경우
-    numberOnlyFilename = fileName.split("-")[0];
-  } else {
-    numberOnlyFileName = fileName.match(/\d+/g).join("");
-  }
+  try {
+    if (fileName.includes("-")) {
+      // 카카오에서 다운로드 한 사진의 경우
+      numberOnlyFileName = fileName.split("-")[0];
+    } else {
+      numberOnlyFileName = fileName.match(/\d+/g).join("");
+    }
 
-  if (numberOnlyFileName.length === 13 || numberOnlyFileName.length === 10) {
-    // Epoch Timestamp 의 경우
-    date = new Date(parseInt(numberOnlyFileName, 10));
-  }
+    if (numberOnlyFileName.length === 13 || numberOnlyFileName.length === 10) {
+      // Epoch Timestamp 의 경우
+      date = new Date(parseInt(numberOnlyFileName, 10));
+    }
 
-  if (numberOnlyFileName.length >= 14 && numberOnlyFileName.startsWith("20")) {
-    // YYYYMMDDHHMMSS 형태의 경우
-    const tmp = parse(
-      numberOnlyFileName.slice(0, 14),
-      "yyyyMMddHHmmss",
-      new Date()
-    );
-    date = new Date(format(tmp, "yyyy-MM-dd HH:mm:ss"));
-  }
+    if (
+      numberOnlyFileName.length >= 14 &&
+      numberOnlyFileName.startsWith("20")
+    ) {
+      // YYYYMMDDHHMMSS 형태의 경우
+      const tmp = parse(
+        numberOnlyFileName.slice(0, 14),
+        "yyyyMMddHHmmss",
+        new Date()
+      );
+      date = new Date(format(tmp, "yyyy-MM-dd HH:mm:ss"));
+    }
 
-  if (numberOnlyFileName.length === 12) {
-    // YYMMDDHHMMSS 형태의 경우
-    const tmp = parse(numberOnlyFileName, "yyMMddHHmmss", new Date());
-    date = new Date(dateFns.format(tmp, "yyyy-MM-dd HH:mm:ss"));
-  }
+    if (numberOnlyFileName.length === 12) {
+      // YYMMDDHHMMSS 형태의 경우
+      const tmp = parse(numberOnlyFileName, "yyMMddHHmmss", new Date());
+      date = new Date(dateFns.format(tmp, "yyyy-MM-dd HH:mm:ss"));
+    }
 
-  return {
-    isCorrect: isDateCorrect(date),
-    date,
-  };
+    return {
+      isCorrect: isDateCorrect(date),
+      date,
+    };
+  } catch (ex) {
+    return {
+      isCorrect: false,
+      date: null,
+    };
+  }
 }
 
 async function parseDateFromExif(fileName, DEPT_PATH) {
@@ -136,9 +146,7 @@ async function bootstrap() {
   for (const DEPT_PATH of DEPT_PATHES) {
     const deptFiles = fs.readdirSync(DEPT_PATH);
     for (const deptFile of deptFiles) {
-      console.log(
-        `processing... success(filename): ${result.successByFileName}, success(exif): ${result.successByExif}, failure: ${result.failure}`
-      );
+      console.log(`[processing ${deptFile}]`);
       try {
         const dateParseResult = [
           parseDateFromFileName(deptFile),
@@ -146,39 +154,43 @@ async function bootstrap() {
         ];
 
         if (dateParseResult[0].isCorrect) {
-          copyFile(
-            path.join(DEPT_PATH, deptFile),
-            path.join(
-              ARIV_PATH,
-              generateFolderNameFromDate(dateParseResult[0].date),
-              deptFile
-            )
+          const a = path.join(DEPT_PATH, deptFile);
+          const b = path.join(
+            ARIV_PATH,
+            generateFolderNameFromDate(dateParseResult[0].date),
+            deptFile
           );
+          console.log(`> success with name, ${a} -> ${b}`);
+          copyFile(a, b);
           result.successByFileName++;
           continue;
         }
 
         if (dateParseResult[1].isCorrect) {
-          copyFile(
-            path.join(DEPT_PATH, deptFile),
-            path.join(
-              ARIV_PATH,
-              generateFolderNameFromDate(dateParseResult[1].date),
-              deptFile
-            )
+          const a = path.join(DEPT_PATH, deptFile);
+          const b = path.join(
+            ARIV_PATH,
+            generateFolderNameFromDate(dateParseResult[1].date),
+            deptFile
           );
+          console.log(`> success with exif, ${a} -> ${b}`);
+          copyFile(a, b);
           result.successByExif++;
           continue;
         }
 
-        copyFile(
-          path.join(DEPT_PATH, deptFile),
-          path.join(ARIV_PATH, UNKNOWN, deptFile)
-        );
+        const a = path.join(DEPT_PATH, deptFile);
+        const b = path.join(ARIV_PATH, UNKNOWN, deptFile);
+        console.log(`failed to parse, ${a} -> ${b}`);
+        copyFile(a, b);
         result.failure++;
       } catch (ex) {
         console.error(ex);
         result.failure++;
+      } finally {
+        console.log(
+          `> succWithName ${result.successByFileName}, succWithExif ${result.successByExif}, failed ${result.failure}`
+        );
       }
     }
   }
