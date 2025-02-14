@@ -21,8 +21,13 @@ function isDateCorrect(date) {
 }
 
 function parseDateFromFileName(fileName) {
-  const numberOnlyFileName = fileName.match(/\d+/g).join("");
-  let date = null;
+  let numberOnlyFileName, date;
+  if (fileName.includes("-")) {
+    // 카카오에서 다운로드 한 사진의 경우
+    numberOnlyFilename = fileName.split("-")[0];
+  } else {
+    numberOnlyFileName = fileName.match(/\d+/g).join("");
+  }
 
   if (numberOnlyFileName.length === 13 || numberOnlyFileName.length === 10) {
     // Epoch Timestamp 의 경우
@@ -31,7 +36,11 @@ function parseDateFromFileName(fileName) {
 
   if (numberOnlyFileName.length >= 14 && numberOnlyFileName.startsWith("20")) {
     // YYYYMMDDHHMMSS 형태의 경우
-    const tmp = parse(numberOnlyFileName.slice(0,14), "yyyyMMddHHmmss", new Date());
+    const tmp = parse(
+      numberOnlyFileName.slice(0, 14),
+      "yyyyMMddHHmmss",
+      new Date()
+    );
     date = new Date(format(tmp, "yyyy-MM-dd HH:mm:ss"));
   }
 
@@ -53,38 +62,38 @@ async function parseDateFromExif(fileName, DEPT_PATH) {
   const INCORRECT = {
     isCorrect: false,
     date: null,
-  }
+  };
 
-  if(ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") {
+  if (ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") {
     return INCORRECT;
   }
 
   try {
     const tags = await ExifReader.load(filePath);
     let dateTimeString = null;
-  
+
     if (!tags) {
       return INCORRECT;
     }
 
-    if (tags['CreateDate'] && tags['CreateDate'].description) {
-      dateTimeString = tags['CreateDate'].description
-    }
-  
-    if (tags['DateTime'] && tags['DateTime'].description) {
-      dateTimeString = tags['DateTime'].description;
+    if (tags["CreateDate"] && tags["CreateDate"].description) {
+      dateTimeString = tags["CreateDate"].description;
     }
 
-    if (tags['DateTimeOriginal'] && tags['DateTimeOriginal'].description) {
-      dateTimeString = tags['DateTimeOriginal'].description;
+    if (tags["DateTime"] && tags["DateTime"].description) {
+      dateTimeString = tags["DateTime"].description;
     }
-  
+
+    if (tags["DateTimeOriginal"] && tags["DateTimeOriginal"].description) {
+      dateTimeString = tags["DateTimeOriginal"].description;
+    }
+
     if (!dateTimeString) {
       return INCORRECT;
     }
-  
+
     return parseDateFromFileName(dateTimeString);
-  } catch(ex) {
+  } catch (ex) {
     return INCORRECT;
   }
 }
@@ -98,23 +107,23 @@ function copyFile(fromFilePath, toFilePath) {
   const toFileFolder = path.dirname(toFilePath);
   if (!fs.existsSync(toFileFolder)) {
     fs.mkdirSync(toFileFolder, { recursive: true });
-    fs.chmod(toFileFolder, '0777', (err) => {
+    fs.chmod(toFileFolder, "0777", (err) => {
       if (err) {
-        console.error(err)
+        console.error(err);
       }
-    })
+    });
   }
 
   fs.copyFileSync(fromFilePath, toFilePath);
-  fs.chmod(toFilePath, '0777', (err) => {
+  fs.chmod(toFilePath, "0777", (err) => {
     if (err) {
-      console.error(err)
+      console.error(err);
     }
-  })
+  });
 }
 
 function generateFolderNameFromDate(date) {
-  return format(date, 'yyyy. MM')
+  return format(date, "yyyy. MM");
 }
 
 async function bootstrap() {
@@ -127,13 +136,15 @@ async function bootstrap() {
   for (const DEPT_PATH of DEPT_PATHES) {
     const deptFiles = fs.readdirSync(DEPT_PATH);
     for (const deptFile of deptFiles) {
-      console.log(`processing... success(filename): ${result.successByFileName}, success(exif): ${result.successByExif}, failure: ${result.failure}`);
+      console.log(
+        `processing... success(filename): ${result.successByFileName}, success(exif): ${result.successByExif}, failure: ${result.failure}`
+      );
       try {
         const dateParseResult = [
           parseDateFromFileName(deptFile),
           await parseDateFromExif(deptFile, DEPT_PATH),
         ];
-    
+
         if (dateParseResult[0].isCorrect) {
           copyFile(
             path.join(DEPT_PATH, deptFile),
@@ -146,7 +157,7 @@ async function bootstrap() {
           result.successByFileName++;
           continue;
         }
-    
+
         if (dateParseResult[1].isCorrect) {
           copyFile(
             path.join(DEPT_PATH, deptFile),
@@ -159,7 +170,7 @@ async function bootstrap() {
           result.successByExif++;
           continue;
         }
-    
+
         copyFile(
           path.join(DEPT_PATH, deptFile),
           path.join(ARIV_PATH, UNKNOWN, deptFile)
@@ -177,4 +188,3 @@ async function bootstrap() {
 }
 
 bootstrap().catch(console.error);
-
